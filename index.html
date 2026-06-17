@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BentoBot – Custom Lunchbox Planner & Doodle Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Floating Header -->
+        <header class="main-header">
+            <div class="logo-area">
+                <span class="logo-icon">🍱</span>
+                <div class="logo-text">
+                    <h1>BentoBot</h1>
+                    <p>Kawaii Lunchbox Planner & Doodle Generator</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="sound-toggle-btn" class="icon-btn" title="Toggle Sound Effects">🔊</button>
+                <button id="settings-toggle-btn" class="icon-btn" title="API Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- Floating Settings Modal/Dropdown -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="settings-header">
+                <h3>⚙️ Settings</h3>
+                <button id="settings-close-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="settings-body">
+                <div class="api-toggle-group">
+                    <label class="switch-container">
+                        <input type="checkbox" id="api-mode-toggle">
+                        <span class="switch-slider"></span>
+                    </label>
+                    <span class="toggle-label">Use Live Gemini API</span>
+                </div>
+                <div id="api-key-container" class="api-key-container disabled">
+                    <label for="gemini-api-key">Gemini API Key:</label>
+                    <input type="password" id="gemini-api-key" placeholder="AIzaSy..." disabled>
+                    <p class="api-help">Get a free key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio</a>. Keys are stored safely in your browser's localStorage.</p>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-grid">
+            <!-- Left Panel: Inputs -->
+            <section class="control-panel">
+                <div class="card">
+                    <h2 class="card-title"><span class="icon">🛒</span> 1. Gather Ingredients</h2>
+                    
+                    <!-- Quick Picker -->
+                    <div class="input-section">
+                        <label>Quick Select Ingredients:</label>
+                        <div class="ingredient-drawer" id="quick-ingredients">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Custom Text Input -->
+                    <div class="input-section">
+                        <label for="custom-ingredients">Add Custom Ingredients:</label>
+                        <div class="custom-input-wrapper">
+                            <input type="text" id="custom-ingredients" placeholder="e.g. quail eggs, cherry tomatoes, parsley...">
+                            <button id="add-custom-btn" class="btn secondary">Add</button>
+                        </div>
+                        <div class="custom-chips" id="custom-chips-container"></div>
+                    </div>
+
+                    <!-- Image Uploader -->
+                    <div class="input-section">
+                        <label>Or Upload Fridge Photo:</label>
+                        <div class="dropzone" id="drop-zone">
+                            <input type="file" id="file-input" accept="image/*" class="file-input">
+                            <div class="dropzone-prompt">
+                                <span class="dropzone-icon">📸</span>
+                                <p>Drag & drop or <span>browse</span> fridge photo</p>
+                                <p class="small-info">Supports JPG, PNG, WebP</p>
+                            </div>
+                            <div class="dropzone-preview hidden" id="drop-preview">
+                                <img src="" alt="Fridge ingredients preview" id="preview-img">
+                                <button type="button" class="remove-preview-btn" id="remove-preview">&times;</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title"><span class="icon">🎨</span> 2. Choose Bento Theme</h2>
+                    <div class="theme-grid" id="theme-grid">
+                        <!-- Themes populated by JS -->
+                    </div>
+                </div>
+
+                <button id="generate-btn" class="generate-btn">
+                    <span class="btn-icon">🍱</span> Assemble Bento!
+                </button>
+            </section>
+
+            <!-- Right Panel: Visualizer & Output -->
+            <section class="output-panel">
+                <!-- Idle State -->
+                <div id="idle-state" class="bento-box-preview empty-state">
+                    <div class="empty-state-content">
+                        <div class="bouncy-bento">🍱</div>
+                        <h2>Your Bento Awaits!</h2>
+                        <p>Select your ingredients and pick a theme on the left, then click <strong>Assemble Bento!</strong> to generate a custom lunchbox blueprint and recipe.</p>
+                        <div class="badge-row">
+                            <span class="status-badge">⚡ Offline Demo Ready</span>
+                            <span class="status-badge">🎨 Pollinations.ai Enabled</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading / Cooking State -->
+                <div id="loading-state" class="bento-box-preview loading-state hidden">
+                    <div class="loader-content">
+                        <div class="cooking-animation">
+                            <div class="rice-cooker">
+                                <div class="steam steam-1"></div>
+                                <div class="steam steam-2"></div>
+                                <div class="cooker-body">
+                                    <div class="cooker-lid"></div>
+                                    <div class="cooker-lights">
+                                        <span class="light red active"></span>
+                                        <span class="light warm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <h2 id="loading-title">Cooking up your bento...</h2>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="loading-progress"></div>
+                        </div>
+                        <p class="loading-subtitle" id="loading-subtitle">Chopping ingredients into cute shapes...</p>
+                    </div>
+                </div>
+
+                <!-- Generated Bento State -->
+                <div id="result-state" class="bento-box-preview result-state hidden">
+                    <div class="result-card">
+                        <!-- Bento Doodle Header -->
+                        <div class="doodle-section">
+                            <div class="blueprint-frame">
+                                <div class="blueprint-overlay">
+                                    <span class="blueprint-label">BLUEPRINT DESIGN</span>
+                                    <span class="blueprint-scale">SCALE: 1:1 CUTE</span>
+                                </div>
+                                <img src="" alt="Bento Box Doodle Blueprint" id="bento-doodle" class="bento-doodle">
+                                <div class="img-shimmer" id="doodle-shimmer"></div>
+                                <button id="regenerate-doodle-btn" class="doodle-reload-btn" title="Regenerate Doodle Blueprint">🔄 Redraw</button>
+                            </div>
+                        </div>
+
+                        <!-- Bento Details -->
+                        <div class="details-section">
+                            <div class="details-header">
+                                <div class="title-meta">
+                                    <h2 id="bento-title">Bearly Awake Bento</h2>
+                                    <p id="bento-desc">A cute bear made of brown-seasoned rice sleeping under a fluffy tamagoyaki egg blanket.</p>
+                                </div>
+                                <div class="cute-factor-display">
+                                    <span class="cute-label">Cute Factor</span>
+                                    <div class="stars" id="bento-stars">⭐⭐⭐⭐⭐</div>
+                                </div>
+                            </div>
+
+                            <!-- Stat Badges -->
+                            <div class="stats-row" id="bento-stats">
+                                <!-- Populated by JS -->
+                            </div>
+
+                            <!-- Identified Ingredients Used -->
+                            <div class="used-ingredients-section">
+                                <h3>📋 Ingredients Used:</h3>
+                                <div class="used-chips" id="used-ingredients-chips">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <!-- Assembly Guide -->
+                            <div class="assembly-section">
+                                <h3>🛠️ Assembly Instructions:</h3>
+                                <ul class="assembly-list" id="assembly-steps-list">
+                                    <!-- Populated by JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>Made with 💖 and 🍱 by BentoBot. No ingredients were harmed in the making of this blueprint.</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
